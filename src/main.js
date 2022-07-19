@@ -9,7 +9,30 @@ const api = axios.create({
 })
 
 // Utils
-function movieContainer(section,movies){
+
+/*
+La API Observador de Intersección provee una vía asíncrona para observar cambios en
+ la intersección de un elemento con un elemento ancestro o con el viewport del documento 
+ de nivel superior.El IntersectionObserver recibe espera dos argumentos, un callback y
+  options
+
+en este caso solo se va a definir el callback debido a que vamos a estar observando
+a todo el documento HTML.
+*/
+const lazyLoader = new IntersectionObserver((entries)=>{
+    entries.forEach((entry)=>{
+        if(entry.isIntersecting){
+            console.log({entry})
+            const url = entry.target.getAttribute('data-img')
+            entry.target.setAttribute('src',url)
+            
+                   
+        }
+    })
+})
+
+
+function movieContainer(section,movies,lazyload = false){
     section.innerHTML = ''
      
      
@@ -24,11 +47,15 @@ function movieContainer(section,movies){
         movieImg.classList.add('movie-img')
         movieImg.setAttribute('alt',movie.title)
         movieImg.setAttribute(
-            'src',
+            lazyload ?'data-img' : 'src',
             'https://image.tmdb.org/t/p/w300' + movie.poster_path)
         
         movieContainer.appendChild(movieImg)
         section.appendChild(movieContainer)
+            if(lazyload){
+
+                lazyLoader.observe(movieImg)
+            }
 
 
     }
@@ -68,7 +95,7 @@ async function getTrendingMoviesPreview(){
 
     const movies = data.results
     console.log({data, movies})
-    movieContainer(trendingPreviewMovieList,movies)
+    movieContainer(trendingPreviewMovieList,movies,true)
 
 
      /* trendingPreviewMovieList.innerHTML = ''
@@ -139,7 +166,7 @@ async function getCategoriesPreview(){
     console.log('getMoviesByCategory')
     console.log({data, movies})
     
-    movieContainer(genericSection,movies)
+    movieContainer(genericSection,movies, true)
      /* genericSection.innerHTML = ''
      
     movies.forEach(movie => {
@@ -202,6 +229,7 @@ async function getMovieBySearch(query){
      movieDetailTittle.textContent = movie.title;
      movieDetailDescription.textContent = movie.overview;
      movieDetailScore.textContent = movie.vote_average;
+   
 
      createCategories(movie.genres, movieDetailsCategoriesList)
 
@@ -211,10 +239,10 @@ async function getMovieBySearch(query){
 
 }
 async function getRelatedMoviesId(id){
-    const {data} = await api( `movie/${id}/similar` )
+    const {data} = await api( `movie/${id}/recommendations` )
     const relatedMovies= data.results
 
-    movieContainer(relatedMoviesContainer,relatedMovies)
+    movieContainer(relatedMoviesContainer,relatedMovies,true)
 }
 
 
